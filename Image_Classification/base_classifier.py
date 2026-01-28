@@ -4,6 +4,7 @@ from tensorflow.keras.applications import MobileNetV2
 from tensorflow.keras.applications.mobilenet_v2 import preprocess_input, decode_predictions
 from tensorflow.keras.preprocessing import image
 import numpy as np
+from grad_cam import make_gradcam_heatmap, overlay_heatmap
 
 model = MobileNetV2(weights="imagenet")
 
@@ -20,6 +21,15 @@ def classify_image(image_path):
         print("\nTop-3 Predictions for", image_path)
         for i, (_, label, score) in enumerate(decoded_predictions):
             print(f"  {i + 1}: {label} ({score:.2f})")
+        try:
+            resp = input("Generate Grad-CAM for this image? (y/N): ").strip().lower()
+            if resp == 'y':
+                heatmap = make_gradcam_heatmap(img_array, model)
+                out_path = image_path + "_gradcam.jpg"
+                overlay_heatmap(image_path, heatmap, output_path=out_path)
+                print(f"Saved Grad-CAM overlay to {out_path}")
+        except Exception as e:
+            print(f"Could not generate Grad-CAM: {e}")
     except Exception as e:
         print(f"Error processing '{image_path}': {e}")
 
