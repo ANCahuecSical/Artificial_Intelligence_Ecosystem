@@ -1,0 +1,2 @@
+1. The wiki article I selected is about a highly anticipated game that just released ten days ago called Arknights:Endfield
+Unable to proceed with the rest since im having issues with the API key. Throwing a 401 error after checking the key for any spaces or new endline. Even entering the key manually into the .env didn't work.
