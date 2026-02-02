@@ -32,29 +32,36 @@ def test_openai_key():
         print("ERROR: OPENAI_API_KEY not set. Please provide a .env with OPENAI_API_KEY.", file=sys.stderr)
         return False
 
-if __name__ == "__main__":
-    ok = test_openai_key()
-    if not ok:
-        # Exit with non-zero to make CI/user checks fail if key is missing
-        raise SystemExit(1)
 
     # Interactive prompt loop: ask questions until user types 'exit' or 'quit'
+   def main() -> None:
+    ok = test_openai_key()
+    if not ok:
+        raise SystemExit(1)
+
     print("Enter 'exit' or 'quit' to end.")
     while True:
         try:
             question = input("Your question: ")
         except (EOFError, KeyboardInterrupt):
-            print()  # newline on abrupt exit
+            print()
             break
+
         if question.strip().lower() in ("exit", "quit"):
             break
+
         try:
             answer = answer_question(question)
         except Exception as e:
-            # Surface errors but keep the loop running
             print("Error while answering question:", e)
             continue
+
         print("Answer:", answer)
+
+
+if __name__ == "__main__":
+    main()
+
 
 # Chunking and embedding configuration
 chunk_size = 500
