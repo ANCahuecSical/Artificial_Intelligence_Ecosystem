@@ -152,8 +152,11 @@ def fetch_and_extract(url: str) -> str:
 
 
 def main() -> None:
-    url = "https://en.wikipedia.org/wiki/Arknights:_Endfield"  # Hardcoded URL
-    extracted = fetch_and_extract(url)
+    parser = argparse.ArgumentParser(description="Extract text from a URL")
+    parser.add_argument("url", help="URL to extract text from")
+    args = parser.parse_args()
+
+    extracted = fetch_and_extract(args.url)
     if extracted:
         print("Extraction completed (non-empty result).")
     else:
