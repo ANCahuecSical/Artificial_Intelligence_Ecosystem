@@ -8,3 +8,15 @@ venv/
 # python cache
 __pycache__/
 *.py[cod]
+
+# HuggingFace / Transformers cache (VERY IMPORTANT)
+.cache/
+.huggingface/
+~/.cache/huggingface/
+
+# FAISS / embeddings artifacts (if you save them later)
+*.faiss
+*.index
+
+# Logs
+*.log
