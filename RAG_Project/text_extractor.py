@@ -7,6 +7,7 @@ Saves extracted text to `Selected_Document.txt` (UTF-8) and returns it.
 from typing import Optional
 import re
 import requests
+import argparse
 from bs4 import BeautifulSoup
 
 OUTPUT_FILE = "Selected_Document.txt"
