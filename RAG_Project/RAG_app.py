@@ -1,3 +1,4 @@
+
 # Logging and warnings configuration 🔧
 import logging
 from transformers import logging as hf_logging
@@ -11,56 +12,35 @@ hf_logging.set_verbosity_error()
 
 # Suppress Python warnings
 warnings.filterwarnings("ignore")
-
+import os
 # Load environment variables from .env and set OpenAI API key 🔐
 from dotenv import load_dotenv
-import os
-import openai
+from pathlib import Path
 
-load_dotenv()
-openai.api_key = os.getenv("OPENAI_API_KEY")
+# Load .env from the same directory as this script
+env_path = Path(__file__).resolve().parent / ".env"
+load_dotenv(dotenv_path=env_path)
+
+from openai import OpenAI
+
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # Simple .env test utility for manual verification 🔍
-def test_openai_key():
+def test_openai_key() -> bool:
     """Return True if OPENAI_API_KEY is set and print a masked confirmation."""
-    if openai.api_key:
-        masked = f"{openai.api_key[:4]}...{openai.api_key[-4:]}" if len(openai.api_key) > 8 else "(masked)"
-        print(f"OPENAI_API_KEY loaded: {len(openai.api_key)} chars, masked: {masked}")
+    api_key = os.getenv("OPENAI_API_KEY")
+    if api_key:
+        masked = f"{api_key[:4]}...{api_key[-4:]}" if len(api_key) > 8 else "(masked)"
+        print(f"OPENAI_API_KEY loaded: {len(api_key)} chars, masked: {masked}")
         return True
     else:
-        import sys
-        print("ERROR: OPENAI_API_KEY not set. Please provide a .env with OPENAI_API_KEY.", file=sys.stderr)
+        print("ERROR: OPENAI_API_KEY not set. Please provide a .env with OPENAI_API_KEY.")
         return False
 
 
-    # Interactive prompt loop: ask questions until user types 'exit' or 'quit'
-   def main() -> None:
-    ok = test_openai_key()
-    if not ok:
-        raise SystemExit(1)
-
-    print("Enter 'exit' or 'quit' to end.")
-    while True:
-        try:
-            question = input("Your question: ")
-        except (EOFError, KeyboardInterrupt):
-            print()
-            break
-
-        if question.strip().lower() in ("exit", "quit"):
-            break
-
-        try:
-            answer = answer_question(question)
-        except Exception as e:
-            print("Error while answering question:", e)
-            continue
-
-        print("Answer:", answer)
 
 
-if __name__ == "__main__":
-    main()
 
 
 # Chunking and embedding configuration
@@ -83,7 +63,7 @@ except FileNotFoundError:
     raise FileNotFoundError(f"Selected document not found: {selected_path}")
 
 # Split text into chunks using RecursiveCharacterTextSplitter ✅
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 # Use separators ['', '\n', ' ', ''] and the configured chunk_size / chunk_overlap
 splitter = RecursiveCharacterTextSplitter(
@@ -200,31 +180,22 @@ def build_prompts(context: str, question: str) -> Tuple[str, str]:
 
 
 def answer_question(question: str) -> str:
-    """Answer `question` using retrieval, reranking, and an LLM chat completion.
-
-    Steps:
-    1. Retrieve candidate chunks with the bi-encoder (top_k).
-    2. Rerank the candidates with the cross-encoder and keep top_m.
-    3. Join the top chunks into a single context string (separated by double newlines).
-    4. Build prompts and call OpenAI Chat Completions API (model="gpt-5").
-
-    Returns the assistant reply text.
-    """
-    # Retrieve bi-encoder candidates (top_k)
+    """Answer `question` using retrieval, reranking, and an LLM chat completion."""
+    # Retrieve bi-encoder candidates
     candidates: List[str] = retrieve_chunks(question)
 
-    # Re-rank with the cross-encoder and keep top_m
+    # Re-rank with the cross-encoder
     relevant_chunks: List[str] = rerank_chunks(question, candidates, m=top_m)
 
-    # Build the final context string
+    # Build context
     context = "\n\n".join(relevant_chunks)
 
     # Build prompts
     system_prompt, user_prompt = build_prompts(context, question)
 
-    # Call the OpenAI Chat Completions API
-    resp = openai.ChatCompletion.create(
-        model="gpt-5",
+    # Call OpenAI (NEW SDK)
+    resp = client.chat.completions.create(
+        model="gpt-4o-mini",
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
@@ -233,5 +204,33 @@ def answer_question(question: str) -> str:
         max_tokens=500,
     )
 
-    # Extract and return the assistant reply
     return resp.choices[0].message.content.strip()
+
+
+
+
+
+def main() -> None:
+    if not test_openai_key():
+        raise SystemExit(1)
+
+    print("Enter 'exit' or 'quit' to end.")
+    while True:
+        try:
+            question = input("Your question: ")
+        except (EOFError, KeyboardInterrupt):
+            print()
+            break
+
+        if question.strip().lower() in ("exit", "quit"):
+            break
+
+        try:
+            answer = answer_question(question)
+            print("Answer:", answer)
+        except Exception as e:
+            print("Error while answering question:", e)
+
+
+if __name__ == "__main__":
+    main()
