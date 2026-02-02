@@ -1,6 +1,6 @@
 # Logging and warnings configuration 🔧
 import logging
-import transformers.logging as hf_logging
+from transformers import logging as hf_logging
 import warnings
 
 # Set log level for langchain.text_splitter and transformers to ERROR
